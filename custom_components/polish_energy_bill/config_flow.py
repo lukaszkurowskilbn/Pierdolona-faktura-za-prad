@@ -115,8 +115,10 @@ class PolishEnergyBillConfigFlow(ConfigFlow, domain=DOMAIN):
         }
         fields: dict = {}
         for zone in profile.zones:
+            # Bez filtra device_class — pokazujemy wszystkie sensory, bo liczniki
+            # energii bywają bez device_class "energy" (np. sensor.pge_total_...).
             fields[vol.Required(zone.value)] = EntitySelector(
-                EntitySelectorConfig(domain="sensor", device_class="energy")
+                EntitySelectorConfig(domain="sensor")
             )
         return self.async_show_form(
             step_id="sensors",

@@ -163,6 +163,28 @@ views:
                   type: change
                   period: month
 
+          # Zużycie z realnego licznika (ma historię → dane widać od razu).
+          # Podmień encję, jeśli Twój licznik nazywa się inaczej.
+          - type: custom:apexcharts-card
+            graph_span: 30d
+            header:
+              show: true
+              title: Zużycie energii — dziennie (30 dni)
+            apex_config:
+              chart:
+                height: 240
+            series:
+              - entity: sensor.pge_total_energy_consumption
+                name: Zużycie dzienne
+                type: column
+                unit: kWh
+                statistics:
+                  type: change
+                  period: day
+                group_by:
+                  func: max
+                  duration: 1d
+
       # --------------------------------------------------------------- STEROWANIE
       - type: grid
         cards:
