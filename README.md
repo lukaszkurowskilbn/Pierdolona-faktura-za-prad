@@ -1,0 +1,92 @@
+# Polski Rachunek za Prąd — integracja Home Assistant
+
+Liczy **w miarę dokładny** polski rachunek za energię elektryczną w Home Assistant.
+Polska faktura ma kilkanaście pozycji (energia czynna, opłata OZE, kogeneracyjna,
+dystrybucyjna sieciowa/jakościowa, stała, abonament, opłata mocowa, akcyza…), a
+stawki zmieniają się częściej niż pogoda. Dlatego **każda pozycja i każda stawka
+jest osobną, edytowalną encją** — podmieniasz w UI, rachunek przelicza się od ręki.
+
+## Co dostajesz
+
+- Sensory: **do zapłaty (brutto)**, należność netto, VAT, zużycie w rachunku.
+- Sumy per grupa: **sprzedaż**, **dystrybucja**, **podatki**.
+- Osobny sensor (diagnostyczny) dla **każdej pozycji** — z ilością, stawką, VAT i brutto w atrybutach.
+- Encje `number` „Stawka: …" do **podmieniania każdej stawki** bez restartu i bez edycji plików.
+- Profile taryf w YAML (PGE G11/G12/G12w) + nadpisywanie stawek w UI (hybryda).
+- Dwa tryby zużycia: **z sensora HA** (np. licznik / `utility_meter`) albo **ręczne** wpisywanie kWh.
+
+## Dokładność
+
+Kalkulator liczy na `Decimal`, zaokrągla każdą pozycję do grosza (`ROUND_HALF_UP`),
+a VAT nalicza od sumy netto w danej stawce — zgodnie z polskim sposobem fakturowania.
+
+Na realnej fakturze PGE (G11, okres 31.01–31.03.2026, 667 kWh) kalkulator daje
+**668,58 / 822,35 zł** wobec **668,61 / 822,39 zł** z faktury — różnica 3–4 grosze.
+Bierze się ona stąd, że PGE zaokrągla **per odczyt** (dwa odczyty w okresie) i liczy
+energię z innego zaokrąglenia zużycia niż dystrybucję. Nasz kalkulator jest
+wewnętrznie spójny; pojedyncze pozycje miesięczne trafia **co do grosza**.
+
+## Instalacja (HACS)
+
+1. HACS → Integrations → menu (⋮) → **Custom repositories**.
+2. Dodaj URL tego repo, kategoria **Integration**.
+3. Zainstaluj „Polski Rachunek za Prąd", zrestartuj Home Assistant.
+4. Ustawienia → Urządzenia i usługi → **Dodaj integrację** → „Polski Rachunek za Prąd".
+
+Instalacja ręczna: skopiuj `custom_components/polish_energy_bill/` do swojego
+katalogu `config/custom_components/` i zrestartuj HA.
+
+## Konfiguracja
+
+**Krok 1.** Wybierz profil taryfowy (np. *PGE Obrót — G11*) i źródło zużycia
+(sensor HA / ręczne).
+
+**Krok 2(sensor).** Wskaż sensor zużycia `[kWh]` — dla taryf wielostrefowych osobny
+sensor na strefę dzienną i nocną (np. dwa `utility_meter` z taryfami HA).
+
+**Opcje** (przycisk *Konfiguruj*): liczba miesięcy/dni okresu rozliczeniowego oraz
+które pozycje są aktywne.
+
+## Podstawianie stawek
+
+Sednem integracji są encje `number` o nazwie **„Stawka: …"** — po jednej na pozycję.
+Gdy URE albo sprzedawca zmieni stawkę, wpisujesz nową wartość w UI i tyle. Wartości
+są pamiętane między restartami. Domyślne stawki podmienisz też trwale w plikach
+profili: `custom_components/polish_energy_bill/core/profiles_data/*.yaml`.
+
+### Dodanie własnego profilu
+
+Skopiuj `pge_g11.yaml`, zmień `key`, `name`, `tariff` i listę `positions`.
+Każda pozycja:
+
+```yaml
+- key: energia_czynna          # stabilny identyfikator
+  name: za energię czynną      # nazwa jak na fakturze
+  group: sale                  # sale | distribution | tax | other
+  unit: per_kwh                # per_kwh | per_mwh | per_month | per_day | flat
+  zone: all                    # all | day | night | peak | off_peak
+  rate: "0.50320"              # cena NETTO
+  vat: "0.23"                  # stawka VAT (ułamek)
+  enabled: true                # opcjonalne
+```
+
+## Profile w zestawie
+
+| Profil      | Taryfa | Uwagi                                                         |
+|-------------|--------|--------------------------------------------------------------|
+| `pge_g11`   | G11    | Stawki **1:1 z realnej faktury PGE 2026**.                   |
+| `pge_g12`   | G12    | Stawki strefowe **przykładowe** — podmień swoimi.            |
+| `pge_g12w`  | G12w   | Jw., taryfa z weekendami w taniej strefie.                   |
+
+## Testy
+
+```bash
+pip install -r requirements_test.txt
+pytest -q
+```
+
+Rdzeń kalkulatora (`core/`) jest niezależny od Home Assistant i w pełni testowalny.
+
+## Licencja
+
+MIT.

@@ -1,0 +1,88 @@
+# Profil: PGE Obrót — taryfa G11 (jednostrefowa).
+# Stawki NETTO odwzorowane 1:1 z realnej faktury VAT 10819154/60R/2026
+# (okres 31/01/2026–31/03/2026). Gdy URE/sprzedawca zmieni stawkę —
+# podmień tylko 'rate' tutaj albo nadpisz w UI (encje number).
+key: pge_g11
+name: PGE Obrót — G11
+seller: PGE Obrót S.A.
+tariff: G11
+currency: PLN
+zones:
+  - all
+
+positions:
+  # --- SPRZEDAŻ (obrót) ---
+  - key: energia_czynna
+    name: za energię czynną
+    group: sale
+    unit: per_kwh
+    zone: all
+    rate: "0.50320"
+    vat: "0.23"
+
+  - key: oplata_kogeneracyjna
+    name: opłata kogeneracyjna
+    group: sale
+    unit: per_mwh          # naliczana od MWh (na fakturze ilość = kWh/1000)
+    zone: all
+    rate: "3.00000"
+    vat: "0.23"
+
+  - key: oplata_oze
+    name: opłata OZE
+    group: sale
+    unit: per_mwh
+    zone: all
+    rate: "7.30000"
+    vat: "0.23"
+
+  # --- DYSTRYBUCJA (OSD) ---
+  - key: oplata_dystr_sieciowa
+    name: opłata dystrybucyjna sieciowa (zmienna)
+    group: distribution
+    unit: per_kwh
+    zone: all
+    rate: "0.34690"
+    vat: "0.23"
+
+  - key: oplata_dystr_jakosciowa
+    name: opłata dystrybucyjna jakościowa (zmienna)
+    group: distribution
+    unit: per_kwh
+    zone: all
+    rate: "0.03320"
+    vat: "0.23"
+
+  - key: oplata_stala_dystr
+    name: opłata stała za dystrybucję
+    group: distribution
+    unit: per_month
+    rate: "9.98000"
+    vat: "0.23"
+
+  - key: abonament_dystr
+    name: abonament dystrybucyjny
+    group: distribution
+    unit: per_month
+    rate: "2.25000"
+    vat: "0.23"
+
+  - key: oplata_mocowa_stala
+    name: opłata mocowa (stała)
+    group: distribution
+    unit: per_month
+    rate: "24.05000"
+    vat: "0.23"
+
+  # --- PODATKI / OPŁATY ---
+  # Akcyza 5 zł/MWh (ustawowa). Na fakturze PGE jest wliczona w cenę energii
+  # czynnej i pokazana tylko informacyjnie — dlatego domyślnie wyłączona,
+  # by nie liczyć jej podwójnie. Włącz, jeśli Twój sprzedawca fakturuje ją osobno.
+  - key: akcyza
+    name: akcyza
+    group: tax
+    unit: per_mwh
+    zone: all
+    rate: "5.00000"
+    vat: "0.23"
+    enabled: false

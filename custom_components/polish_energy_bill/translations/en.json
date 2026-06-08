@@ -1,0 +1,39 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Polish Energy Bill",
+        "description": "Choose a tariff profile and how consumption is read.",
+        "data": {
+          "name": "Name",
+          "profile": "Tariff profile",
+          "mode": "Consumption source"
+        }
+      },
+      "sensors": {
+        "title": "Consumption sensors",
+        "description": "Pick the consumption sensor [kWh] for profile {profile}.",
+        "data": {
+          "all": "Consumption (24h)",
+          "day": "Consumption — day",
+          "night": "Consumption — night",
+          "peak": "Consumption — peak",
+          "off_peak": "Consumption — off-peak"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bill settings",
+        "description": "Billing period and active positions. Edit rates via the 'Stawka: ...' number entities.",
+        "data": {
+          "billing_months": "Months in period",
+          "billing_days": "Days in period (0 = auto, days in current month)",
+          "enabled_positions": "Active bill positions"
+        }
+      }
+    }
+  }
+}

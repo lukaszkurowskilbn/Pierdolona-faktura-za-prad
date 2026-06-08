@@ -1,0 +1,13 @@
+{
+  "domain": "polish_energy_bill",
+  "name": "Polski Rachunek za Prąd",
+  "version": "0.1.0",
+  "documentation": "https://github.com/lukaszkurowski/polish-energy-bill",
+  "issue_tracker": "https://github.com/lukaszkurowski/polish-energy-bill/issues",
+  "codeowners": ["@lukaszkurowski"],
+  "config_flow": true,
+  "iot_class": "calculated",
+  "integration_type": "service",
+  "requirements": ["PyYAML>=6.0"],
+  "dependencies": []
+}

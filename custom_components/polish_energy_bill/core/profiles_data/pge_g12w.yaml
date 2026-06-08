@@ -1,0 +1,107 @@
+# Profil: PGE Obrót — taryfa G12w (noc + całe weekendy w taniej strefie).
+#
+# UWAGA: poniższe 'rate' dla pozycji STREFOWYCH (energia czynna, opł. sieciowa)
+# to WARTOŚCI PRZYKŁADOWE — nie mam Twojej faktury G12. Podmień je swoimi
+# stawkami (z faktury albo z taryfy OSD) tutaj lub w UI (encje number).
+# Opłaty stałe i systemowe odwzorowane z realnej faktury G11 2026.
+#
+# Zużycie strefowe podajesz z dwóch sensorów (utility_meter z taryfami HA):
+# jeden dla strefy dziennej, drugi dla nocnej.
+key: pge_g12w
+name: PGE Obrót — G12w (dzień/noc + weekend)
+seller: PGE Obrót S.A.
+tariff: G12w
+currency: PLN
+zones:
+  - day
+  - night
+
+positions:
+  # --- SPRZEDAŻ (obrót) ---
+  - key: energia_czynna_dzien
+    name: za energię czynną (dzień)
+    group: sale
+    unit: per_kwh
+    zone: day
+    rate: "0.55000"        # PRZYKŁAD — podmień
+    vat: "0.23"
+
+  - key: energia_czynna_noc
+    name: za energię czynną (noc)
+    group: sale
+    unit: per_kwh
+    zone: night
+    rate: "0.40000"        # PRZYKŁAD — podmień
+    vat: "0.23"
+
+  - key: oplata_kogeneracyjna
+    name: opłata kogeneracyjna
+    group: sale
+    unit: per_mwh
+    zone: all              # naliczana od całości zużycia
+    rate: "3.00000"
+    vat: "0.23"
+
+  - key: oplata_oze
+    name: opłata OZE
+    group: sale
+    unit: per_mwh
+    zone: all
+    rate: "7.30000"
+    vat: "0.23"
+
+  # --- DYSTRYBUCJA (OSD) ---
+  - key: oplata_dystr_sieciowa_dzien
+    name: opłata dystrybucyjna sieciowa — dzień
+    group: distribution
+    unit: per_kwh
+    zone: day
+    rate: "0.42000"        # PRZYKŁAD — podmień
+    vat: "0.23"
+
+  - key: oplata_dystr_sieciowa_noc
+    name: opłata dystrybucyjna sieciowa — noc
+    group: distribution
+    unit: per_kwh
+    zone: night
+    rate: "0.12000"        # PRZYKŁAD — podmień
+    vat: "0.23"
+
+  - key: oplata_dystr_jakosciowa
+    name: opłata dystrybucyjna jakościowa (zmienna)
+    group: distribution
+    unit: per_kwh
+    zone: all
+    rate: "0.03320"
+    vat: "0.23"
+
+  - key: oplata_stala_dystr
+    name: opłata stała za dystrybucję
+    group: distribution
+    unit: per_month
+    rate: "9.98000"
+    vat: "0.23"
+
+  - key: abonament_dystr
+    name: abonament dystrybucyjny
+    group: distribution
+    unit: per_month
+    rate: "2.25000"
+    vat: "0.23"
+
+  - key: oplata_mocowa_stala
+    name: opłata mocowa (stała)
+    group: distribution
+    unit: per_month
+    rate: "24.05000"
+    vat: "0.23"
+
+  # --- PODATKI / OPŁATY ---
+  - key: akcyza
+    name: akcyza
+    group: tax
+    unit: per_mwh
+    zone: all
+    rate: "5.00000"
+    vat: "0.23"
+    enabled: false

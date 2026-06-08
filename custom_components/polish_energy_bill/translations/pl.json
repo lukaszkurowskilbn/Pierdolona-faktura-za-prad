@@ -1,0 +1,39 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Polski Rachunek za Prąd",
+        "description": "Wybierz profil taryfowy i sposób pobierania zużycia.",
+        "data": {
+          "name": "Nazwa",
+          "profile": "Profil taryfowy",
+          "mode": "Źródło zużycia"
+        }
+      },
+      "sensors": {
+        "title": "Sensory zużycia",
+        "description": "Wskaż sensor zużycia [kWh] dla profilu {profile}.",
+        "data": {
+          "all": "Zużycie całodobowe",
+          "day": "Zużycie — dzień",
+          "night": "Zużycie — noc",
+          "peak": "Zużycie — szczyt",
+          "off_peak": "Zużycie — poza szczytem"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Ustawienia rachunku",
+        "description": "Okres rozliczeniowy i aktywne pozycje. Stawki edytujesz w encjach 'Stawka: ...'.",
+        "data": {
+          "billing_months": "Liczba miesięcy okresu",
+          "billing_days": "Liczba dni okresu (0 = auto, dni bieżącego miesiąca)",
+          "enabled_positions": "Aktywne pozycje rachunku"
+        }
+      }
+    }
+  }
+}
