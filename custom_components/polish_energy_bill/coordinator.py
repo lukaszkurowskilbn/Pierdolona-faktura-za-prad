@@ -56,6 +56,10 @@ class BillCoordinator(DataUpdateCoordinator[Bill]):
         # Stan żywy, zasilany przez encje number (RestoreNumber):
         self.rate_overrides: dict[str, Decimal] = {}
         self.manual_consumption: dict[Zone, Decimal] = {}
+        # Punkt zero (odczyt licznika bazowy) per strefa — tryb sensor:
+        self.baseline: dict[Zone, Decimal] = {}
+        # Rejestr encji baseline, by przycisk mógł je ustawić:
+        self._baseline_entities: dict[Zone, Any] = {}
 
     # --- API dla encji number ---
 
@@ -66,6 +70,34 @@ class BillCoordinator(DataUpdateCoordinator[Bill]):
     @callback
     def set_manual_consumption(self, zone: Zone, value: float) -> None:
         self.manual_consumption[zone] = Decimal(str(value))
+
+    @callback
+    def set_baseline(self, zone: Zone, value: float) -> None:
+        self.baseline[zone] = Decimal(str(value))
+
+    @callback
+    def register_baseline_entity(self, zone: Zone, entity: Any) -> None:
+        self._baseline_entities[zone] = entity
+
+    async def capture_zero(self, zone: Zone) -> bool:
+        """Zapisuje bieżący odczyt sensora strefy jako punkt zero.
+
+        Zwraca True, jeśli udało się odczytać sensor. Aktualizuje też encję
+        number 'Odczyt zero', by wartość była widoczna w UI.
+        """
+        entity_id = self.zone_sensors.get(zone.value)
+        if not entity_id:
+            return False
+        value = self._read_sensor(entity_id)
+        if value is None:
+            return False
+        entity = self._baseline_entities.get(zone)
+        if entity is not None:
+            await entity.async_set_native_value(float(value))
+        else:
+            self.set_baseline(zone, float(value))
+            await self.async_request_refresh()
+        return True
 
     # --- konfiguracja z opcji ---
 
@@ -100,8 +132,12 @@ class BillCoordinator(DataUpdateCoordinator[Bill]):
         else:
             for zone_name, entity_id in self.zone_sensors.items():
                 value = self._read_sensor(entity_id)
-                if value is not None:
-                    by_zone[Zone(zone_name)] = value
+                if value is None:
+                    continue
+                zone = Zone(zone_name)
+                # Zużycie liczone od punktu zero (bazowego odczytu licznika).
+                base = self.baseline.get(zone, Decimal("0"))
+                by_zone[zone] = max(Decimal("0"), value - base)
         if not by_zone:
             by_zone = {Zone.ALL: Decimal("0")}
         return Consumption(by_zone)

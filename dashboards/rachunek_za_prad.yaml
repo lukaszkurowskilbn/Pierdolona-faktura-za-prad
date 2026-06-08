@@ -1,0 +1,190 @@
+# =============================================================================
+#  Dashboard "Rachunek za prąd" — osobny widok do paska bocznego.
+#
+#  JAK DODAĆ (pojawi się jako ikona w lewym pasku, jak "Energia"):
+#  1. Ustawienia → Dashboardy → Dodaj dashboard → "Nowy dashboard od zera".
+#     Nadaj nazwę "Rachunek za prąd", ikonę np. mdi:cash-multiple,
+#     zaznacz "Pokaż w pasku bocznym".
+#  2. Otwórz nowy dashboard → menu (⋮) → Edytuj → menu (⋮) → "Edytor surowej
+#     konfiguracji" (Raw editor) → wklej całą zawartość tego pliku.
+#
+#  WYMAGANIA:
+#  - Karta ApexCharts: HACS → Frontend → "apexcharts-card" (lovelace-apexcharts-card).
+#
+#  ENTITY_ID: poniżej zakładają nazwę instancji "Rachunek za prąd".
+#  Jeśli nazwałeś inaczej, podmień prefiks sensor.rachunek_za_prad_  na swój
+#  (Narzędzia deweloperskie → Stany pokażą realne nazwy encji).
+# =============================================================================
+
+title: Rachunek za prąd
+views:
+  - title: Rachunek
+    path: rachunek
+    icon: mdi:cash-multiple
+    type: sections
+    max_columns: 2
+    sections:
+
+      # ---------------------------------------------------------------- ILE PŁACĘ
+      - type: grid
+        cards:
+          - type: heading
+            heading: Ile płacę
+            heading_style: title
+
+          - type: tile
+            entity: sensor.rachunek_za_prad_do_zaplaty_brutto
+            name: Do zapłaty (brutto)
+            icon: mdi:cash
+            color: red
+            vertical: false
+
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: tile
+                entity: sensor.rachunek_za_prad_naleznosc_netto
+                name: Netto
+                icon: mdi:receipt-text-outline
+              - type: tile
+                entity: sensor.rachunek_za_prad_vat
+                name: VAT
+                icon: mdi:percent-outline
+              - type: tile
+                entity: sensor.rachunek_za_prad_zuzycie_w_rachunku
+                name: Zużycie
+                icon: mdi:flash
+              - type: tile
+                entity: sensor.rachunek_za_prad_koszt_1_kwh_brutto
+                name: Koszt 1 kWh
+                icon: mdi:tag-outline
+
+      # ------------------------------------------------------------- ZA CO PŁACĘ
+      - type: grid
+        cards:
+          - type: heading
+            heading: Za co płacę
+            heading_style: title
+
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: tile
+                entity: sensor.rachunek_za_prad_sprzedaz_energii_netto
+                name: Sprzedaż energii
+                icon: mdi:transmission-tower-export
+                color: blue
+              - type: tile
+                entity: sensor.rachunek_za_prad_dystrybucja_netto
+                name: Dystrybucja
+                icon: mdi:transmission-tower
+                color: purple
+              - type: tile
+                entity: sensor.rachunek_za_prad_koszt_energii_zmienny_brutto
+                name: Koszt zmienny (od zużycia)
+                icon: mdi:chart-line-variant
+              - type: tile
+                entity: sensor.rachunek_za_prad_oplaty_stale_brutto
+                name: Opłaty stałe (miesięczne)
+                icon: mdi:calendar-clock
+
+          # Czytelny podział: ile to energia, ile dystrybucja, ile podatki.
+          - type: custom:apexcharts-card
+            chart_type: donut
+            header:
+              show: true
+              title: Z czego składa się rachunek (netto)
+            series:
+              - entity: sensor.rachunek_za_prad_sprzedaz_energii_netto
+                name: Sprzedaż
+              - entity: sensor.rachunek_za_prad_dystrybucja_netto
+                name: Dystrybucja
+              - entity: sensor.rachunek_za_prad_podatki_i_oplaty_netto
+                name: Podatki
+
+      # ------------------------------------------------------- JAK ROŚNIE W CZASIE
+      - type: grid
+        cards:
+          - type: heading
+            heading: Jak rosną koszty w czasie
+            heading_style: title
+
+          - type: custom:apexcharts-card
+            graph_span: 30d
+            header:
+              show: true
+              title: Koszt energii — dziennie (30 dni)
+              show_states: false
+            apex_config:
+              chart:
+                height: 240
+            series:
+              - entity: sensor.rachunek_za_prad_koszt_energii_narastajaco
+                name: Koszt dzienny
+                type: column
+                statistics:
+                  type: change
+                  period: day
+                group_by:
+                  func: max
+                  duration: 1d
+
+          - type: custom:apexcharts-card
+            graph_span: 12w
+            header:
+              show: true
+              title: Koszt energii — tygodniowo (12 tygodni)
+            apex_config:
+              chart:
+                height: 240
+            series:
+              - entity: sensor.rachunek_za_prad_koszt_energii_narastajaco
+                name: Koszt tygodniowy
+                type: column
+                statistics:
+                  type: change
+                  period: week
+
+          - type: custom:apexcharts-card
+            graph_span: 12month
+            header:
+              show: true
+              title: Koszt energii — miesięcznie (12 miesięcy)
+            apex_config:
+              chart:
+                height: 240
+            series:
+              - entity: sensor.rachunek_za_prad_koszt_energii_narastajaco
+                name: Koszt miesięczny
+                type: column
+                statistics:
+                  type: change
+                  period: month
+
+      # --------------------------------------------------------------- STEROWANIE
+      - type: grid
+        cards:
+          - type: heading
+            heading: Punkt zero i stawki
+            heading_style: title
+
+          - type: markdown
+            content: >
+              **Punkt zero** = odczyt licznika, od którego liczymy zużycie.
+              Naciśnij „Ustaw jako zero" na początku okresu rozliczeniowego
+              albo wpisz odczyt ręcznie w polu „Odczyt zero".
+
+          - type: entities
+            title: Punkt zero
+            entities:
+              - entity: button.rachunek_za_prad_ustaw_jako_zero_calodobowa
+                name: Ustaw bieżący odczyt jako zero
+              - entity: number.rachunek_za_prad_odczyt_zero_calodobowa
+                name: Odczyt zero (ręcznie)
+
+          - type: markdown
+            content: >
+              **Stawki** — zmień gdy URE/sprzedawca podniesie ceny. Wartości
+              netto, rachunek przeliczy się od razu. (Encje „Stawka: …")

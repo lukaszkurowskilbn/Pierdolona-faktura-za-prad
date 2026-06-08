@@ -74,6 +74,27 @@ class Bill:
     def line(self, key: str) -> LineItem | None:
         return next((l for l in self.lines if l.key == key), None)
 
+    @property
+    def variable_gross(self) -> Decimal:
+        """Brutto części zależnej od zużycia (per_kwh + per_mwh)."""
+        return round_pln(
+            sum((l.gross for l in self.lines if l.unit.is_consumption_based), Decimal("0"))
+        )
+
+    @property
+    def fixed_gross(self) -> Decimal:
+        """Brutto opłat stałych (niezależnych od zużycia)."""
+        return round_pln(
+            sum((l.gross for l in self.lines if not l.unit.is_consumption_based), Decimal("0"))
+        )
+
+    @property
+    def variable_unit_gross(self) -> Decimal:
+        """Średni koszt brutto 1 kWh w części zmiennej [zł/kWh]."""
+        if self.consumption_kwh == 0:
+            return Decimal("0")
+        return (self.variable_gross / self.consumption_kwh).quantize(Decimal("0.0001"))
+
     def as_dict(self) -> dict:
         return {
             "currency": self.currency,

@@ -6,7 +6,7 @@ from typing import Final
 
 DOMAIN: Final = "polish_energy_bill"
 
-PLATFORMS: Final = ["sensor", "number"]
+PLATFORMS: Final = ["sensor", "number", "button"]
 
 # --- klucze config entry (data) ---
 CONF_NAME: Final = "name"

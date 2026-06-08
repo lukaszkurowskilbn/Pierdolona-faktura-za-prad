@@ -34,6 +34,10 @@ async def async_setup_entry(
         BillTotalSensor(coordinator, entry, "gross", "Do zapłaty (brutto)"),
         BillTotalSensor(coordinator, entry, "net", "Należność netto"),
         BillTotalSensor(coordinator, entry, "vat", "VAT"),
+        BillTotalSensor(coordinator, entry, "variable_gross", "Koszt energii zmienny (brutto)"),
+        BillTotalSensor(coordinator, entry, "fixed_gross", "Opłaty stałe (brutto)"),
+        UnitCostSensor(coordinator, entry),
+        EnergyCostSensor(coordinator, entry),
         ConsumptionSensor(coordinator, entry),
     ]
     entities += [
@@ -144,6 +148,48 @@ class PositionSensor(_BillEntity):
             return None
         line = self.bill.line(self._key)
         return line.as_dict() if line else None
+
+
+class UnitCostSensor(_BillEntity):
+    """Średni koszt brutto 1 kWh (część zmienna) [zł/kWh]."""
+
+    _attr_native_unit_of_measurement = "zł/kWh"
+    _attr_suggested_display_precision = 4
+
+    def __init__(self, coordinator, entry) -> None:
+        super().__init__(coordinator, entry)
+        self._attr_name = "Koszt 1 kWh (brutto)"
+        self._attr_unique_id = f"{entry.entry_id}_unit_cost"
+
+    @property
+    def native_value(self):
+        if self.bill is None:
+            return None
+        return float(self.bill.variable_unit_gross)
+
+
+class EnergyCostSensor(_BillEntity):
+    """Koszt zmienny energii narastająco [PLN] — źródło wykresów i panelu Energia.
+
+    Rośnie wraz ze zużyciem w okresie; przy ustawieniu nowego punktu zero
+    spada — dlatego TOTAL_INCREASING, by statystyki poprawnie liczyły przyrosty.
+    """
+
+    _attr_device_class = SensorDeviceClass.MONETARY
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_native_unit_of_measurement = "PLN"
+    _attr_suggested_display_precision = 2
+
+    def __init__(self, coordinator, entry) -> None:
+        super().__init__(coordinator, entry)
+        self._attr_name = "Koszt energii (narastająco)"
+        self._attr_unique_id = f"{entry.entry_id}_energy_cost"
+
+    @property
+    def native_value(self):
+        if self.bill is None:
+            return None
+        return float(self.bill.variable_gross)
 
 
 class ConsumptionSensor(_BillEntity):

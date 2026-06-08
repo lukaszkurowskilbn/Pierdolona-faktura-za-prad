@@ -12,7 +12,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, MODE_MANUAL
+from .const import DOMAIN, MODE_MANUAL, MODE_SENSOR
 from .coordinator import BillCoordinator
 from .core import Zone
 
@@ -39,6 +39,12 @@ async def async_setup_entry(
     if coordinator.mode == MODE_MANUAL:
         entities += [
             ConsumptionNumber(coordinator, entry, zone) for zone in profile.zones
+        ]
+    elif coordinator.mode == MODE_SENSOR:
+        # Punkt zero (bazowy odczyt licznika) — można wpisać ręcznie albo
+        # ustawić przyciskiem "Ustaw jako zero".
+        entities += [
+            BaselineNumber(coordinator, entry, zone) for zone in profile.zones
         ]
 
     async_add_entities(entities)
@@ -133,5 +139,40 @@ class ConsumptionNumber(_Base):
     async def async_set_native_value(self, value: float) -> None:
         self._attr_native_value = value
         self.coordinator.set_manual_consumption(self._zone, value)
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
+
+
+class BaselineNumber(_Base):
+    """Bazowy odczyt licznika [kWh] = punkt zero, od którego liczymy zużycie."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_mode = NumberMode.BOX
+    _attr_native_min_value = 0.0
+    _attr_native_max_value = 100000000.0
+    _attr_native_step = 0.001
+    _attr_native_unit_of_measurement = "kWh"
+
+    def __init__(
+        self, coordinator: BillCoordinator, entry: ConfigEntry, zone: Zone
+    ) -> None:
+        super().__init__(coordinator, entry)
+        self._zone = zone
+        self._attr_name = f"Odczyt zero ({ZONE_LABEL.get(zone, zone.value)})"
+        self._attr_unique_id = f"{entry.entry_id}_baseline_{zone.value}"
+        self._attr_native_value = 0.0
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.coordinator.register_baseline_entity(self._zone, self)
+        last = await self.async_get_last_number_data()
+        if last is not None and last.native_value is not None:
+            self._attr_native_value = last.native_value
+        self.coordinator.set_baseline(self._zone, self._attr_native_value)
+        await self.coordinator.async_request_refresh()
+
+    async def async_set_native_value(self, value: float) -> None:
+        self._attr_native_value = value
+        self.coordinator.set_baseline(self._zone, value)
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()

@@ -14,6 +14,8 @@ jest osobną, edytowalną encją** — podmieniasz w UI, rachunek przelicza się
 - Encje `number` „Stawka: …" do **podmieniania każdej stawki** bez restartu i bez edycji plików.
 - Profile taryf w YAML (PGE G11/G12/G12w) + nadpisywanie stawek w UI (hybryda).
 - Dwa tryby zużycia: **z sensora HA** (np. licznik / `utility_meter`) albo **ręczne** wpisywanie kWh.
+- **Punkt zero**: pierwszy odczyt licznika ustawiasz jako „zero" (przyciskiem lub ręcznie), a koszty liczą się od niego.
+- **Osobny panel** w pasku bocznym z dużymi, czytelnymi kwotami i **wykresami kosztów dzień/tydzień/miesiąc** (ApexCharts) — prościej niż na fakturze.
 
 ## Dokładność
 
@@ -69,6 +71,32 @@ Każda pozycja:
   vat: "0.23"                  # stawka VAT (ułamek)
   enabled: true                # opcjonalne
 ```
+
+## Punkt zero (od czego liczymy)
+
+W trybie sensorowym licznik pokazuje stan narastająco (np. 4877 kWh). Rachunek ma
+liczyć od początku okresu, więc ustalasz **punkt zero**:
+
+- przycisk **„Ustaw jako zero"** — zapisuje bieżący odczyt sensora jako start okresu, albo
+- pole **„Odczyt zero"** — wpisujesz wartość ręcznie (np. odczyt z faktury).
+
+Zużycie = bieżący odczyt − punkt zero (nigdy ujemne). Na początku nowego okresu
+naciskasz „Ustaw jako zero" i koszty startują od nowa. W trybie ręcznym po prostu
+wpisujesz zużycie w kWh.
+
+## Osobny panel (dashboard)
+
+W repo jest gotowy widok `dashboards/rachunek_za_prad.yaml` — osobny dashboard,
+który dodajesz do **paska bocznego** (jak „Energia"). Pokazuje rachunek prościej
+niż faktura: duże „Do zapłaty", podział sprzedaż/dystrybucja, koszt 1 kWh oraz
+wykresy kosztów **dzienny / tygodniowy / miesięczny**.
+
+1. **Ustawienia → Dashboardy → Dodaj dashboard → „Nowy dashboard od zera"**;
+   nazwa „Rachunek za prąd", ikona `mdi:cash-multiple`, zaznacz *Pokaż w pasku bocznym*.
+2. Otwórz go → ⋮ → **Edytuj** → ⋮ → **Edytor surowej konfiguracji** → wklej plik.
+
+Wymaga karty **ApexCharts** (HACS → Frontend → `apexcharts-card`). W pliku są
+instrukcje i podmiana `entity_id`, jeśli nazwałeś instancję inaczej niż „Rachunek za prąd".
 
 ## Profile w zestawie
 
