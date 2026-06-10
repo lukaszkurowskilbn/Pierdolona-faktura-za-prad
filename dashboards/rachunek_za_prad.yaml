@@ -1,20 +1,3 @@
-# =============================================================================
-#  Dashboard "Rachunek za prąd" — osobny widok do paska bocznego.
-#
-#  JAK DODAĆ (pojawi się jako ikona w lewym pasku, jak "Energia"):
-#  1. Ustawienia → Dashboardy → Dodaj dashboard → "Nowy dashboard od zera".
-#     Nazwa "Rachunek za prąd", ikona mdi:cash-multiple, zaznacz
-#     "Pokaż w pasku bocznym".
-#  2. Otwórz nowy dashboard → ⋮ → Edytuj → ⋮ → "Edytor surowej konfiguracji"
-#     (Raw editor) → wklej całą zawartość tego pliku.
-#
-#  WYMAGANIA: karta ApexCharts (HACS → Frontend → "apexcharts-card").
-#
-#  ENTITY_ID zakładają nazwę instancji "Rachunek za prąd". Jeśli nazwałeś
-#  inaczej, podmień prefiks sensor./number./date./select.rachunek_za_prad_
-#  (Narzędzia deweloperskie → Stany pokażą realne nazwy). Licznik energii w
-#  wykresach to sensor.pge_total_energy_consumption — też podmień na swój.
-# =============================================================================
 title: Rachunek za prąd
 views:
   - title: Rachunek
@@ -251,46 +234,88 @@ views:
                   const r =
                   Number(hass.states['sensor.liczniki_rachunek_za_prad_stawka_zmienna_brutto']?.state);
                   return x * (isFinite(r) && r > 0 ? r : 1.10);
-      # =====================================================================
-      #  ETS — ile w rachunku to koszty uprawnień do emisji CO₂ (DOBUDOWANE).
-      #
-      #  UWAGA o prefiksach (jak w nagłówku pliku): w tej instancji WSZYSTKIE
-      #  encje ETS (sensory, number, select) mają prefiks
-      #  ...liczniki_rachunek_za_prad_. Tylko stare sensory rachunku
-      #  (do_zaplaty itp.) są bez 'liczniki_'. Jeśli u Ciebie inaczej —
-      #  sprawdź realne nazwy w Narzędzia deweloperskie → Stany i podmień.
-      # =====================================================================
+        column_span: 2
       - type: grid
         cards:
           - type: heading
             heading: Ile w rachunku to ETS (CO₂)
             heading_style: title
           - type: markdown
-            content: |
-              {% set c = 'sensor.liczniki_rachunek_za_prad_ets_koszt_w_rachunku_brutto' %}
-              {% set pg = state_attr(c,'percent_gross')|float(0) %}
-              {% set eg = state_attr(c,'emission_gross')|float(0) %}
-              {% set pn = state_attr(c,'percent_net')|float(pg/1.23) %}
-              {% set pv = state_attr(c,'percent_vat')|float(pg-pn) %}
-              {% set en = state_attr(c,'emission_net')|float(eg/1.23) %}
-              {% set ev = state_attr(c,'emission_vat')|float(eg-en) %}
-              {% set en0 = state_attr(c,'energy_net')|float(states('sensor.rachunek_za_prad_za_energie_czynna')|float(0)) %}
-              {% set bill = state_attr(c,'bill_gross')|float(states('sensor.rachunek_za_prad_do_zaplaty_brutto')|float(0)) %}
-              {% set co2 = state_attr(c,'co2_kg')|float(0) %}
-              {% set m = state_attr(c,'method') %}
-              {% set ud = states('number.liczniki_rachunek_za_prad_ets_udzial_w_cenie_energii')|float(0) %}
-              {% set eua = states('number.liczniki_rachunek_za_prad_ets_cena_uprawnienia_eua')|float(0) %}
-              {% set kurs = states('number.liczniki_rachunek_za_prad_ets_kurs_eur_pln')|float(0) %}
-              {% set ps = (pg/bill*100) if bill>0 else 0 %}
-              {% set es = (eg/bill*100) if bill>0 else 0 %}
-              ### Rozbicie ETS — skąd się bierze koszt uprawnień CO₂
-              | Metoda | Podstawa | Netto | VAT | Brutto | Udział w rachunku |
-              |:--|:--|--:|--:|--:|--:|
-              | Udział % w cenie energii{{ ' — aktywna' if m=='procent' else '' }} | energia czynna {{ '%.2f'|format(en0)|replace('.',',') }} zł × {{ '%.0f'|format(ud)|replace('.',',') }} % | {{ '%.2f'|format(pn)|replace('.',',') }} | {{ '%.2f'|format(pv)|replace('.',',') }} | **{{ '%.2f'|format(pg)|replace('.',',') }}** | {{ '%.1f'|format(ps)|replace('.',',') }} % |
-              | Emisja CO₂ × cena EUA × kurs{{ ' — aktywna' if m=='emisja' else '' }} | {{ '%.1f'|format(co2)|replace('.',',') }} kg → {{ '%.2f'|format(eua)|replace('.',',') }} EUR/t × {{ '%.2f'|format(kurs)|replace('.',',') }} | {{ '%.2f'|format(en)|replace('.',',') }} | {{ '%.2f'|format(ev)|replace('.',',') }} | **{{ '%.2f'|format(eg)|replace('.',',') }}** | {{ '%.1f'|format(es)|replace('.',',') }} % |
-              | **Rachunek brutto** | | | | **{{ '%.2f'|format(bill)|replace('.',',') }}** | |
+            content: >
+              {% set c =
+              'sensor.liczniki_rachunek_za_prad_ets_koszt_w_rachunku_brutto' %}
 
-              ETS jest zaszyty w cenie energii czynnej — to szacunek, nie osobna pozycja faktury. Reszta rachunku (dystrybucja, opłaty stałe) nie zawiera ETS, dlatego udział w całym rachunku jest mniejszy niż w samej cenie energii.
+              {% set pg = state_attr(c,'percent_gross')|float(0) %}
+
+              {% set eg = state_attr(c,'emission_gross')|float(0) %}
+
+              {% set pn = state_attr(c,'percent_net')|float(pg/1.23) %}
+
+              {% set pv = state_attr(c,'percent_vat')|float(pg-pn) %}
+
+              {% set en = state_attr(c,'emission_net')|float(eg/1.23) %}
+
+              {% set ev = state_attr(c,'emission_vat')|float(eg-en) %}
+
+              {% set en0 =
+              state_attr(c,'energy_net')|float(states('sensor.rachunek_za_prad_za_energie_czynna')|float(0))
+              %}
+
+              {% set bill =
+              state_attr(c,'bill_gross')|float(states('sensor.rachunek_za_prad_do_zaplaty_brutto')|float(0))
+              %}
+
+              {% set co2 = state_attr(c,'co2_kg')|float(0) %}
+
+              {% set m = state_attr(c,'method') %}
+
+              {% set ud =
+              states('number.liczniki_rachunek_za_prad_ets_udzial_w_cenie_energii')|float(0)
+              %}
+
+              {% set eua =
+              states('number.liczniki_rachunek_za_prad_ets_cena_uprawnienia_eua')|float(0)
+              %}
+
+              {% set kurs =
+              states('number.liczniki_rachunek_za_prad_ets_kurs_eur_pln')|float(0)
+              %}
+
+              {% set ps = (pg/bill*100) if bill>0 else 0 %}
+
+              {% set es = (eg/bill*100) if bill>0 else 0 %}
+
+              ### Rozbicie ETS — skąd się bierze koszt uprawnień CO₂
+
+              | Metoda | Podstawa | Netto | VAT | Brutto | Udział w rachunku |
+
+              |:--|:--|--:|--:|--:|--:|
+
+              | Udział % w cenie energii{{ ' — aktywna' if m=='procent' else ''
+              }} | energia czynna {{ '%.2f'|format(en0)|replace('.',',') }} zł ×
+              {{ '%.0f'|format(ud)|replace('.',',') }} % | {{
+              '%.2f'|format(pn)|replace('.',',') }} | {{
+              '%.2f'|format(pv)|replace('.',',') }} | **{{
+              '%.2f'|format(pg)|replace('.',',') }}** | {{
+              '%.1f'|format(ps)|replace('.',',') }} % |
+
+              | Emisja CO₂ × cena EUA × kurs{{ ' — aktywna' if m=='emisja' else
+              '' }} | {{ '%.1f'|format(co2)|replace('.',',') }} kg → {{
+              '%.2f'|format(eua)|replace('.',',') }} EUR/t × {{
+              '%.2f'|format(kurs)|replace('.',',') }} | {{
+              '%.2f'|format(en)|replace('.',',') }} | {{
+              '%.2f'|format(ev)|replace('.',',') }} | **{{
+              '%.2f'|format(eg)|replace('.',',') }}** | {{
+              '%.1f'|format(es)|replace('.',',') }} % |
+
+              | **Rachunek brutto** | | | | **{{
+              '%.2f'|format(bill)|replace('.',',') }}** | |
+
+
+              ETS jest zaszyty w cenie energii czynnej — to szacunek, nie osobna
+              pozycja faktury. Reszta rachunku (dystrybucja, opłaty stałe) nie
+              zawiera ETS, dlatego udział w całym rachunku jest mniejszy niż w
+              samej cenie energii.
           - type: entities
             title: Metoda i parametry ETS
             entities:
@@ -374,8 +399,8 @@ views:
             heading_style: title
           - type: markdown
             content: >
-              **Zakres dat i tryb.** Wybierz, jak liczyć zużycie w okresie:
-              *Od odczytu do teraz* (wpisujesz datę i godzinę odczytu z faktury —
+              **Zakres dat i tryb.** Wybierz, jak liczyć zużycie w okresie: *Od
+              odczytu do teraz* (wpisujesz datę i godzinę odczytu z faktury —
               koszt liczy się od tej chwili do teraz), *Auto z historii* (jawny
               zakres dat), *Ręczne odczyty* (odczyt początkowy i końcowy) lub
               *Punkt zero* (bieżący odczyt − wartość zero w kWh).
@@ -384,7 +409,8 @@ views:
             entities:
               - entity: select.liczniki_rachunek_za_prad_tryb_zuzycia_okresu
                 name: Tryb zużycia
-              - entity: datetime.liczniki_rachunek_za_prad_punkt_zero_data_i_godzina_odczytu
+              - entity: >-
+                  datetime.liczniki_rachunek_za_prad_punkt_zero_data_i_godzina_odczytu
                 name: Punkt zero — data i godzina odczytu
               - entity: date.liczniki_rachunek_za_prad_okres_od
                 name: Okres od (tryb „zakres dat")
@@ -405,3 +431,4 @@ views:
             content: >
               **Stawki** — zmień, gdy URE/sprzedawca podniesie ceny (encje
               „Stawka: …"). Wartości netto, rachunek przeliczy się od razu.
+        column_span: 2
